@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - Barangay Clearance System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="barangay-seal">
+                    <img src="logo circ.png" alt="Barangay Daanlungsod Official Seal" class="seal-image">
+                </div>
+                <div class="logo-text">
+                    <h2>Barangay</h2>
+                    <h3>Daanlungsod</h3>
+                </div>
+                <h1>Admin Portal</h1>
+            </div>
+            <nav class="nav">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="#login" class="nav-link" id="adminLoginTab">Login</a>
+            </nav>
+        </header>
+
+        <main class="main-content">
+            <!-- Admin Login Form -->
+            <div id="login" class="form-container fade-in">
+                <h2><i class="fas fa-user-shield"></i> Admin Login</h2>
+                <form id="adminLoginForm">
+                    <div class="form-group">
+                        <label for="adminUsername">Username</label>
+                        <input type="text" id="adminUsername" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminPassword">Password</label>
+                        <input type="password" id="adminPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Login
+                    </button>
+                </form>
+                <p style="text-align: center; margin-top: 1rem; color: #666;">
+                    <i class="fas fa-info-circle"></i>
+                    Access restricted to authorized barangay officials only
+                </p>
+            </div>
+
+            <!-- Admin Dashboard (Hidden initially) -->
+            <div id="adminDashboard" class="dashboard" style="display: none;">
+                <div class="dashboard-header">
+                    <h2 class="dashboard-title">Admin Dashboard</h2>
+                    <div>
+                        <span id="adminName" style="margin-right: 1rem; color: #666;"></span>
+                        <button class="btn btn-secondary" onclick="adminLogout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Logout
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalRequests">0</div>
+                        <div class="stat-label">Total Requests</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="pendingRequests">0</div>
+                        <div class="stat-label">Pending Approval</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="approvedRequests">0</div>
+                        <div class="stat-label">Approved</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="releasedRequests">0</div>
+                        <div class="stat-label">Released</div>
+                    </div>
+                </div>
+
+                <!-- Change Admin Credentials Form -->
+                <form id="changeCredentialsForm" class="form-container fade-in" style="max-width: 400px; margin-bottom: 2rem; display: none;">
+                    <h3><i class="fas fa-user-cog"></i> Change Admin Credentials</h3>
+                    <div class="form-group">
+                        <label for="newAdminUsername">New Username</label>
+                        <input type="text" id="newAdminUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newAdminPassword">New Password</label>
+                        <input type="password" id="newAdminPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </form>
+
+                <!-- Action Buttons -->
+                <div class="dashboard-header">
+                    <h3>Quick Actions</h3>
+                    <div>
+                        <button class="btn btn-primary" onclick="showReports()">
+                            <i class="fas fa-chart-bar"></i>
+                            Generate Reports
+                        </button>
+                        <button class="btn btn-secondary" onclick="showResidentManagement()">
+                            <i class="fas fa-users"></i>
+                            Manage Residents
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter and Search -->
+                <div class="form-group" style="margin-bottom: 2rem;">
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label for="statusFilter">Filter by Status:</label>
+                            <select id="statusFilter" onchange="filterRequests()">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="released">Released</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <label for="searchInput">Search:</label>
+                            <input type="text" id="searchInput" placeholder="Search by name, ID, or email..." onkeyup="searchRequests()">
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <label for="dateFilter">Filter by Date:</label>
+                            <input type="date" id="dateFilter" onchange="filterRequests()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Requests Table -->
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-column="id">REQUEST ID</th>
+                                <th class="sortable" data-column="resident">RESIDENT NAME</th>
+                                <th class="sortable" data-column="email">EMAIL</th>
+                                <th class="sortable" data-column="purpose">PURPOSE</th>
+                                <th class="sortable" data-column="dateSubmitted">DATE SUBMITTED</th>
+                                <th class="sortable" data-column="status">STATUS</th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminRequestsTable">
+                            <!-- Requests will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Request Details Modal -->
+            <div id="requestDetailsModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeRequestDetailsModal()">&times;</span>
+                    <h2><i class="fas fa-file-alt"></i> Request Details</h2>
+                    <div id="requestDetailsContent">
+                        <div class="form-group">
+                            <label>Request ID:</label>
+                            <p id="detailRequestId"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>Resident Name:</label>
+                            <p id="detailResidentName"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>Email:</label>
+                            <p id="detailEmail"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone:</label>
+                            <p id="detailPhone"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>Address:</label>
+                            <p id="detailAddress"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>Purpose:</label>
+                            <p id="detailPurpose"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>Additional Details:</label>
+                            <p id="detailAdditional"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>Documents:</label>
+                            <div id="detailDocuments"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Status:</label>
+                            <p id="detailPaymentStatus"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>Current Status:</label>
+                            <p id="detailStatus"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="statusUpdate">Update Status:</label>
+                            <select id="statusUpdate">
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="released">Released</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="adminNotes">Admin Notes:</label>
+                            <textarea id="adminNotes" placeholder="Add any notes or comments..."></textarea>
+                        </div>
+                        <div style="display: flex; gap: 1rem;">
+                            <button class="btn btn-success" onclick="updateRequestStatus()">
+                                <i class="fas fa-save"></i>
+                                Update Status
+                            </button>
+                            <button class="btn btn-primary" onclick="generateClearance()">
+                                <i class="fas fa-certificate"></i>
+                                Generate Clearance
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Modal -->
+            <div id="reportsModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeReportsModal()">&times;</span>
+                    <h2><i class="fas fa-chart-bar"></i> Generate Reports</h2>
+                    <form id="reportForm">
+                        <div class="form-group">
+                            <label for="reportType">Report Type:</label>
+                            <select id="reportType" name="reportType" required>
+                                <option value="">Select Report Type</option>
+                                <option value="daily">Daily Report</option>
+                                <option value="weekly">Weekly Report</option>
+                                <option value="monthly">Monthly Report</option>
+                                <option value="custom">Custom Date Range</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="reportDate">Date:</label>
+                            <input type="date" id="reportDate" name="reportDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="startDate">Start Date:</label>
+                            <input type="date" id="startDate" name="startDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="endDate">End Date:</label>
+                            <input type="date" id="endDate" name="endDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="reportFormat">Format:</label>
+                            <select id="reportFormat" name="reportFormat" required>
+                                <option value="pdf">PDF</option>
+                                <option value="excel">Excel</option>
+                                <option value="csv">CSV</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-download"></i>
+                            Generate Report
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Resident Management Modal -->
+            <div id="residentModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeResidentModal()">&times;</span>
+                    <h2><i class="fas fa-users"></i> Resident Management</h2>
+                    <div class="form-group">
+                        <label for="residentSearch">Search Residents:</label>
+                        <input type="text" id="residentSearch" placeholder="Search by name, email, or ID..." onkeyup="searchResidents()">
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="residentsTable">
+                                <!-- Residents will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clearance Preview Modal -->
+            <div id="clearanceModal" class="modal">
+                <div class="modal-content" style="max-width: 800px;">
+                    <span class="close" onclick="closeClearanceModal()">&times;</span>
+                    <h2><i class="fas fa-certificate"></i> Clearance Preview</h2>
+                    <div id="clearanceContent" style="border: 2px solid #333; padding: 2rem; background: white;">
+                                                 <div style="text-align: center; margin-bottom: 2rem;">
+                             <h3 style="color: #333; margin-bottom: 0.5rem;">BARANGAY CLEARANCE</h3>
+                             <p style="color: #666; margin: 0;">Republic of the Philippines</p>
+                             <p style="color: #666; margin: 0;">City of Toledo</p>
+                             <p style="color: #666; margin: 0;">Barangay Daanlungsod</p>
+                         </div>
+                        
+                        <div style="margin-bottom: 2rem;">
+                            <p><strong>TO WHOM IT MAY CONCERN:</strong></p>
+                            <p style="text-align: justify; line-height: 1.8;">
+                                This is to certify that <strong id="clearanceName"></strong>, of legal age, Filipino, 
+                                and a resident of <span id="clearanceAddress"></span>, is a person of good moral character 
+                                and law-abiding citizen of this barangay.
+                            </p>
+                            <p style="text-align: justify; line-height: 1.8;">
+                                This certification is being issued upon the request of the above-named person for 
+                                <span id="clearancePurpose"></span>.
+                            </p>
+                        </div>
+                        
+                                                 <div style="margin-bottom: 2rem;">
+                             <p><strong>Issued this <span id="clearanceDate"></span> at Barangay Daanlungsod, 
+                             City of Toledo, Philippines.</strong></p>
+                         </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                            <div style="text-align: center;">
+                                <p><strong>Prepared by:</strong></p>
+                                <p style="margin-top: 3rem; border-top: 1px solid #333; padding-top: 0.5rem;">
+                                    [Barangay Secretary Name]<br>
+                                    <small>Barangay Secretary</small>
+                                </p>
+                            </div>
+                            <div style="text-align: center;">
+                                <p><strong>Approved by:</strong></p>
+                                <p style="margin-top: 3rem; border-top: 1px solid #333; padding-top: 0.5rem;">
+                                    [Barangay Captain Name]<br>
+                                    <small>Barangay Captain</small>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <div id="qrCode" style="display: inline-block; padding: 1rem; border: 1px solid #ccc;">
+                                <i class="fas fa-qrcode" style="font-size: 4rem; color: #333;"></i>
+                                <p style="margin: 0; font-size: 0.8rem;">QR Code for Verification</p>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <p style="font-size: 0.8rem; color: #666;">
+                                Clearance ID: <span id="clearanceId"></span><br>
+                                Valid until: <span id="clearanceValidUntil"></span>
+                            </p>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <button class="btn btn-primary" onclick="downloadClearance()">
+                            <i class="fas fa-download"></i>
+                            Download PDF
+                        </button>
+                        <button class="btn btn-success" onclick="printClearance()">
+                            <i class="fas fa-print"></i>
+                            Print
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 Barangay Clearance System. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="admin-script.js"></script>
+</body>
+</html>

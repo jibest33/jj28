@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resident Portal - Barangay Clearance System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="barangay-seal">
+                    <img src="logo circ.png" alt="Barangay Daanlungsod Official Seal" class="seal-image">
+                </div>
+                <div class="logo-text">
+                    <h2>Barangay</h2>
+                    <h3>Daanlungsod</h3>
+                </div>
+                <h1>Resident Portal</h1>
+            </div>
+            <nav class="nav">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="#login" class="nav-link" id="loginTab">Login</a>
+                <a href="#register" class="nav-link" id="registerTab">Register</a>
+            </nav>
+        </header>
+
+        <main class="main-content">
+            <!-- Login Form -->
+            <div id="login" class="form-container fade-in">
+                <div id="loginMessage"></div>
+                <h2><i class="fas fa-sign-in-alt"></i> Login</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">Email Address</label>
+                        <input type="email" id="loginEmail" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Login
+                    </button>
+                </form>
+                <p style="text-align: center; margin-top: 1rem;">
+                    Don't have an account? <a href="#register" onclick="showRegister()">Register here</a>
+                </p>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register" class="form-container fade-in" style="display: none;">
+                <h2><i class="fas fa-user-plus"></i> Register</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" id="firstName" name="firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="nationalId">National ID Number</label>
+                        <input type="text" id="nationalId" name="nationalId" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Complete Address</label>
+                        <textarea id="address" name="address" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i>
+                        Register
+                    </button>
+                </form>
+                <p style="text-align: center; margin-top: 1rem;">
+                    Already have an account? <a href="#login" onclick="showLogin()">Login here</a>
+                </p>
+            </div>
+
+            <!-- Dashboard (Hidden initially) -->
+            <div id="dashboard" class="dashboard" style="display: none;">
+                <div class="dashboard-header">
+                    <h2 class="dashboard-title">Welcome, <span id="userName"></span>!</h2>
+                    <button class="btn btn-secondary" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </button>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="pendingCount">0</div>
+                        <div class="stat-label">Pending Requests</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="approvedCount">0</div>
+                        <div class="stat-label">Approved Clearances</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="releasedCount">0</div>
+                        <div class="stat-label">Released Clearances</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-header">
+                    <h3>Request New Clearance</h3>
+                    <button class="btn btn-primary" onclick="showNewRequestForm()">
+                        <i class="fas fa-plus"></i>
+                        New Request
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>Date Submitted</th>
+                                <th>Purpose</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestsTable">
+                            <!-- Requests will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- View Request Modal -->
+            <div id="viewRequestModal" class="modal">
+                <div class="modal-content" style="max-width: 500px;">
+                    <span class="close" onclick="closeViewRequestModal()">&times;</span>
+                    <h2><i class="fas fa-eye"></i> Request Details</h2>
+                    <table class="table" id="viewRequestTable">
+                        <tbody>
+                            <!-- Details will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- New Request Form Modal -->
+            <div id="requestModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeRequestModal()">&times;</span>
+                    <h2><i class="fas fa-file-alt"></i> New Clearance Request</h2>
+                    <form id="requestForm">
+                        <div class="form-group">
+                            <label for="purpose">Purpose of Clearance</label>
+                            <select id="purpose" name="purpose" required>
+                                <option value="">Select Purpose</option>
+                                <option value="employment">Employment</option>
+                                <option value="business">Business Permit</option>
+                                <option value="school">School Requirements</option>
+                                <option value="travel">Travel Abroad</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="purposeDetails">Additional Details</label>
+                            <textarea id="purposeDetails" name="purposeDetails" placeholder="Please provide additional details about your request..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="validId">Upload Valid ID</label>
+                            <input type="file" id="validId" name="validId" accept="image/*,.pdf" required>
+                            <small>Accepted formats: JPG, PNG, PDF (Max 5MB)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="additionalDocs">Additional Documents (Optional)</label>
+                            <input type="file" id="additionalDocs" name="additionalDocs" accept="image/*,.pdf" multiple>
+                            <small>Accepted formats: JPG, PNG, PDF (Max 5MB each)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="paymentMethod">Payment Method</label>
+                            <select id="paymentMethod" name="paymentMethod" required>
+                                <option value="">Select Payment Method</option>
+                                <option value="gcash">GCash</option>
+                                <option value="paymaya">PayMaya</option>
+                                <option value="bank">Bank Transfer</option>
+                                <option value="cash">Cash Payment</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <p><strong>Clearance Fee: ₱100.00</strong></p>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                            Submit Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Payment Modal -->
+            <div id="paymentModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closePaymentModal()">&times;</span>
+                    <h2><i class="fas fa-credit-card"></i> Payment Details</h2>
+                    <div id="paymentDetails">
+                        <div class="form-group">
+                            <label>Request ID:</label>
+                            <p id="paymentRequestId"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount:</label>
+                            <p><strong>₱100.00</strong></p>
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Method:</label>
+                            <p id="paymentMethodText"></p>
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Instructions:</label>
+                            <div id="paymentInstructions"></div>
+                        </div>
+                        <div class="form-group" id="paymentProofGroup">
+                            <label for="paymentProof">Upload Payment Proof</label>
+                            <input type="file" id="paymentProof" name="paymentProof" accept="image/*,.pdf">
+                        </div>
+                        <button class="btn btn-success" onclick="confirmPayment()">
+                            <i class="fas fa-check"></i>
+                            Confirm Payment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 Barangay Clearance System. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="user-script.js"></script>
+</body>
+</html>
